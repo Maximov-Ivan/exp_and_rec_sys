@@ -1,0 +1,15 @@
+This is an example.
+This is also an example
+
+An expert system is a computer program that emulates the decision-making ability of a human expert. It uses a knowledge base of facts and rules and an inference engine to draw conclusions from provided data.
+Expert systems are a branch of artificial intelligence designed to solve complex problems by reasoning through bodies of knowledge. They utilize a knowledge base, which stores expert information, and an inference engine, which applies logical rules to the knowledge to make judgments.
+
+An expert system is a computer program that emulates the decision-making ability of a human expert. It uses a knowledge base of facts and rules and an inference engine to draw conclusions from provided data.
+A recommendation system is a subclass of information filtering systems that predicts a user's preferences for items. It analyzes past user behavior and similarities between users and items to suggest relevant choices, such as products or content.
+
+A recommendation system is a subclass of information filtering systems that predicts a user's preferences for items. It analyzes past user behavior and similarities between users and items to suggest relevant choices, such as products or content.
+Photosynthesis is the biological process used by plants, algae, and some bacteria to convert light energy into chemical energy. Utilizing sunlight, water, and carbon dioxide, these organisms produce sugars (glucose) and release oxygen as a byproduct. This process is fundamental to life on Earth, forming the base of most food chains and maintaining the planet's atmospheric oxygen levels.
+
+A recommendation system is a subclass of information converting and slight processing systems that uses to predict a biological user's preferences for items.
+Photosynthesis is the system of biological processes used by a subclass of plants and other items to convert light into preferred energy.
+
