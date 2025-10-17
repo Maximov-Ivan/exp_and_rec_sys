@@ -11,6 +11,7 @@ from telebot.types import (
 import asyncio
 from dotenv import load_dotenv
 from api_calls import gpt_query, qwen_query
+from logger import log_interaction
 
 
 load_dotenv()
@@ -47,6 +48,7 @@ async def send_welcome(message: Message):
 Это цифровой компаньон для поддержки психического здоровья. 
 Бот не заменяет профессиональную психологическую помощь. 
     """
+    log_interaction(message.chat.id, "START_COMMAND")
     await bot.send_message(
         message.chat.id, welcome_text, reply_markup=create_main_menu()
     )
@@ -73,7 +75,13 @@ async def send_help(message: Message):
 Модели:
 GPT - gpt-oss-20b
 Qwen - Qwen3-32B
+
+Как использовать:
+1. Выберите модель
+2. Напишите ваш запрос
+3. Получите ответ от выбранной модели
     """
+    log_interaction(message.chat.id, "HELP_COMMAND")
     await bot.send_message(message.chat.id, help_text)
 
 
@@ -85,8 +93,9 @@ async def restart_bot(message: Message):
     if user_id in user_models:
         del user_models[user_id]
 
+    log_interaction(user_id, "RESTART_COMMAND")
     await bot.send_message(
-        message.chat.id,
+        user_id,
         "Бот перезапущен. Выберите модель:",
         reply_markup=create_model_menu(),
     )
@@ -99,6 +108,7 @@ async def handle_main_menu(message: Message):
     """Обработчик нажатий на кнопки меню"""
 
     text = message.text
+    log_interaction(message.chat.id, "MENU_BUTTON", text)
     if text == "Помощь":
         await send_help(message)
     else:
@@ -119,8 +129,9 @@ async def handle_model_selection(call: CallbackQuery):
         user_models[user_id] = "qwen"
         model_name = "Qwen"
 
+    log_interaction(user_id, "MODEL_SELECTED", f"model: {model_name}")
     await bot.answer_callback_query(call.id)
-    await bot.send_message(user_id, f"Выбрана модель {model_name}.")
+    await bot.send_message(user_id, f"Выбрана модель {model_name}.\nВедите запрос")
 
 
 async def send_long_message(user_id: int, text: str, max_length=MAX_MESSAGE_LENGTH):
@@ -152,17 +163,27 @@ async def send_long_message(user_id: int, text: str, max_length=MAX_MESSAGE_LENG
 async def handle_user_query(message: Message):
     """Обработчик текстовых сообщений (запросов пользователя)"""
     user_id = message.chat.id
+    user_message = message.text
+    log_message_preview = (
+        user_message[:100] + "..." if len(user_message) > 100 else user_message
+    )
+    log_interaction(user_id, "USER_MESSAGE", f"text: {log_message_preview}")
 
     if user_id not in user_models:
+        log_interaction(user_id, "MODEL_NOT_SELECTED")
         await bot.send_message(
             user_id, "Сначала выберите модель.", reply_markup=create_model_menu()
         )
     else:
         if user_models[user_id] == "gpt":
-            response_text = await gpt_query(message.text)
+            response_text = await gpt_query(user_message)
         else:
-            response_text = await qwen_query(message.text)
+            response_text = await qwen_query(user_message)
 
+        log_response_preview = (
+            response_text[:100] + "..." if len(response_text) > 100 else response_text
+        )
+        log_interaction(user_id, "BOT_RESPONSE", f"text: {log_response_preview}")
         if len(response_text) < MAX_MESSAGE_LENGTH:
             await bot.send_message(user_id, response_text)
         else:
