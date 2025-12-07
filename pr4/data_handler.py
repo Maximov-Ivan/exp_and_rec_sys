@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import random
+import numpy as np
 from dotenv import load_dotenv
-from pearson_similarity import pearson_similarity
 
 load_dotenv()
 
@@ -11,9 +11,10 @@ class DataHandler:
     def __init__(self):
         self.ratings = None
         self.movies = None
-        self.movie_ratings = None
-        self.popular_movies = None
-        self.movie_similarity = None
+        self.movie_ratings_cnt = None
+        self.user_ratings = None
+
+        self.load_movielens_data()
 
     def load_movielens_data(self) -> None:
         """Загрузка данных MovieLens 100K"""
@@ -59,7 +60,8 @@ class DataHandler:
             )
             print(f"Загружено {len(self.ratings)} оценок")
             print(f"Фильмов в базе: {len(self.movies)}")
-            self.compute_movie_ratings()
+            self.compute_user_ratings()
+            self.compute_movie_ratings_cnt()
 
         except FileNotFoundError:
             print("Файлы данных не найдены")
@@ -67,40 +69,37 @@ class DataHandler:
                 "Скачайте MovieLens 100K и поместите файлы u.data и u.item в директорию, указанную в переменной среды DATA_DIR"
             )
 
-    def compute_movie_ratings(self) -> None:
-        """Вычисление всех оценок для каждого фильма"""
+    def compute_user_ratings(self) -> None:
+        """Создание словаря оценок пользователей"""
         print("Вычисление оценок...")
-        self.movie_ratings = {}
+        self.user_ratings = {}
         for _, row in self.ratings.iterrows():
             user, movie, rating = row["user_id"], row["item_id"], row["rating"]
-            if movie not in self.movie_ratings:
-                self.movie_ratings[movie] = {}
-            self.movie_ratings[movie][user] = rating
+            if user not in self.user_ratings:
+                self.user_ratings[user] = {}
+            self.user_ratings[user][movie] = rating
+
+    def compute_movie_ratings_cnt(self) -> None:
+        """Вычисление числа оценок для каждого фильма"""
+        self.movie_ratings_cnt = {}
+        for _, row in self.ratings.iterrows():
+            movie = row["item_id"]
+            if movie not in self.movie_ratings_cnt:
+                self.movie_ratings_cnt[movie] = 0
+            self.movie_ratings_cnt[movie] += 1
 
         for _, row in self.movies.iterrows():
             movie = row["item_id"]
-            if movie not in self.movie_ratings:
-                self.movie_ratings[movie] = {}
+            if movie not in self.movie_ratings_cnt:
+                self.movie_ratings_cnt[movie] = 0
 
-    def compute_movie_similarity(self, target_movie: int) -> None:
+    def get_user_ratings(self) -> dict:
         """
-        Вычисление схожести между заданным фильмом и всеми
+        Получение словаря оценок
 
-        :param int target_movie: ID целевого фильма
+        :return dict: словарь оценок пользователей
         """
-        if not self.movie_similarity:
-            self.movie_similarity = {}
-        if target_movie not in self.movie_similarity:
-            self.movie_similarity[target_movie] = {}
-        for _, row in self.movies.iterrows():
-            movie = row["item_id"]
-            if movie not in self.movie_similarity:
-                self.movie_similarity[movie] = {}
-            similarity = pearson_similarity(
-                self.movie_ratings[target_movie], self.movie_ratings[movie]
-            )
-            self.movie_similarity[target_movie][movie] = similarity
-            self.movie_similarity[movie][target_movie] = similarity
+        return self.user_ratings
 
     def get_movie_title(self, movie_id: int) -> str:
         """
@@ -156,12 +155,6 @@ class DataHandler:
         """
         return self.movies["item_id"].tolist()
 
-    def get_movie_similarity(self, movie1: int, movie2: int) -> float:
-        """Получить данные о схожести фильмов"""
-        if movie1 in self.movie_similarity and movie2 in self.movie_similarity[movie1]:
-            return self.movie_similarity[movie1][movie2]
-        return 0
-
     def get_popular_movie(self) -> str:
         """
         Получение популярного фильма. Предпочтение отдается фильмам с наибольшим числом оценок
@@ -170,9 +163,9 @@ class DataHandler:
         """
         all_movies = []
         weights = []
-        for movie, user_ratings in self.movie_ratings.items():
+        for movie, cnt in self.movie_ratings_cnt.items():
             all_movies.append(movie)
-            weights.append(len(user_ratings) ** 2 + 1)
+            weights.append(cnt**2 + 1)
 
         popular_movies = random.choices(all_movies, weights=weights, k=1)
         return popular_movies[0]
