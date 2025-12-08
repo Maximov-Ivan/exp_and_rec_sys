@@ -106,6 +106,7 @@ class SVDppRecommender:
         print(f"Обучение модели SVD++ ({self.n_epochs} эпох):")
         for epoch in range(self.n_epochs):
             total_loss = 0
+            num = 0
             for user_idx in range(self.num_users):
                 implied_vector = self.get_user_implied_vector(user_idx)
                 for item_idx, true_rating in self.user_ratings[user_idx].items():
@@ -138,8 +139,10 @@ class SVDppRecommender:
                     self.user_biases[user_idx] += self.lr * user_bias_grad
                     self.item_biases[item_idx] += self.lr * item_bias_grad
 
+                    num += 1
+
             self.lr *= 0.95
-            avg_loss = total_loss / self.num_users
+            avg_loss = total_loss / num
             print(f"  эпоха {epoch + 1}/{self.n_epochs}, Loss: {avg_loss:.4f}")
 
     def create_virtual_user(self, user_id: int) -> None:
